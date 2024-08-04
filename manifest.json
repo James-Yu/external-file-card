@@ -1,0 +1,10 @@
+{
+	"id": "external-file-card",
+	"name": "External File Card",
+	"version": "0.0.1",
+	"minAppVersion": "1.0.0",
+	"description": "Display file cards for external files.",
+	"author": "James-Yu",
+	"authorUrl": "https://github.com/James-Yu",
+	"isDesktopOnly": false
+}
