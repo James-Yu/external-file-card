@@ -104,7 +104,7 @@ class ExtFileCardEl extends MarkdownRenderChild {
 			const extPath = untildify(extPaths[index]) + (extPaths[index].endsWith('/') ? '' : '/');
 			this.filePath = glob.sync(extPath + '**/' + source)[0] ?? '';
 			if (this.filePath === '') {
-				return;
+				continue;
 			}
 			const stats = fs.statSync(this.filePath);
 			this.cTime = stats.ctime.toLocaleString();
