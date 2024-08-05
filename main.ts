@@ -11,8 +11,6 @@ import {
     Setting,
 } from 'obsidian'
 
-// Remember to rename these classes and interfaces!
-
 interface ExtFileCardSettings {
     extPaths: string
     langId: string
@@ -175,8 +173,6 @@ class ExtFileCardSettingTab extends PluginSettingTab {
         const { containerEl } = this
 
         containerEl.empty()
-
-        new Setting(containerEl).setName('External File Card').setHeading()
 
         new Setting(containerEl)
             .setName('External paths')
