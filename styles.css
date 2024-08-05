@@ -7,25 +7,27 @@ If your plugin does not need CSS, delete this file.
 
 */
 
-card {
+ext-file-card {
     display: block;
-    border: solid 0.5px;
+    border: solid 0.025em;
     border-radius: 0.25em;
     padding: 0.5em 1em;
+    margin: 0.5em 0;
+    max-width: 24em;
     overflow: hidden;
 }
 
-card * {
+ext-file-card * {
     display: block;
 }
 
-card file-name a {
+ext-file-card .file-name a {
     font-weight: bold;
     text-decoration-line: none;
 }
 
-card file-time,
-card file-path {
+ext-file-card .file-time,
+ext-file-card .file-path {
     font-family: monospace;
     font-size: 0.8em;
     overflow: hidden;
@@ -34,6 +36,6 @@ card file-path {
     text-decoration-line: none;
 }
 
-card file-warn {
+ext-file-card .file-warn {
     font-size: 0.8em;
 }

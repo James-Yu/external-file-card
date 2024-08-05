@@ -4,6 +4,8 @@ External File Card is a plugin for [Obsidian](https://obsidian.md). It shows a c
 
 ## How to use?
 
+### Code block card
+
 This plugin add two Markdown codeblock languages `ef` and `extfile`, which are equivalent. When provided with a file name or partial file path, this plugin will try to locate the given file in the file system, rooting from paths as given in the setting of this plugin. If a file is found, this plugin will render a card UI with its file name, modified and created times, and containing folder path. Both the file name and the containing folder path are clickable, opening the file and the folder using OS default applications.
 
 For example, the following code block
@@ -27,6 +29,14 @@ will be rendered as
 
 If the note is opened on mobile platforms, this plugin will not try to locate the file, but instead render the following card
 <br /><img src="./images/on_mobile.png" width="300px" />
+
+### Inline link
+
+If instead of a card, an inline link is required, this plugin also handles Obsidian URIs in the format of `obsidian://ef#file.pdf` and `obsidian://extfile#file.pdf`. Note that the hash `#` cannot be omitted, and the file name or partial path should follow the hash.
+
+These two URIs work similar to other URLs, i.e., you can use syntax like `[This is the file](obsidian://ef#file.pdf)` to create a link to the external file. Clicking on the link will open the file with the default application.
+
+Similar to code block cards, the link won't do anything on mobile platforms.
 
 ## Where are the files?
 

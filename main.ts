@@ -1,150 +1,168 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { App, MarkdownPostProcessorContext, MarkdownRenderChild, Platform, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import {
+    App,
+    MarkdownPostProcessorContext,
+    MarkdownRenderChild,
+    Notice,
+    ObsidianProtocolData,
+    Platform,
+    Plugin,
+    PluginSettingTab,
+    Setting,
+} from 'obsidian'
 
 // Remember to rename these classes and interfaces!
 
 interface ExtFileCardSettings {
-	extPaths: string;
+    extPaths: string
 }
 
 const DEFAULT_SETTINGS: ExtFileCardSettings = {
-	extPaths: ''
+    extPaths: '',
 }
 
 export default class ExtFileCard extends Plugin {
-	settings: ExtFileCardSettings;
+    settings: ExtFileCardSettings
 
-	async onload() {
-		// Settings
-		this.addSettingTab(new ExtFileCardSettingTab(this.app, this));
-		await this.loadSettings();
+    async onload() {
+        // Settings
+        this.addSettingTab(new ExtFileCardSettingTab(this.app, this))
+        await this.loadSettings()
 
-		// Handlers
-		this.registerMarkdownCodeBlockProcessor('ef', this.processor.bind(this));
-		this.registerMarkdownCodeBlockProcessor('extfile', this.processor.bind(this));
-	}
+        // Handlers
+        this.registerMarkdownCodeBlockProcessor('ef', this.codeBlockProcessor.bind(this))
+        this.registerMarkdownCodeBlockProcessor('extfile', this.codeBlockProcessor.bind(this))
+        this.registerObsidianProtocolHandler('ef', this.uriProcessor.bind(this))
+        this.registerObsidianProtocolHandler('extfile', this.uriProcessor.bind(this))
+    }
 
-	onunload() {}
+    onunload() {}
 
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())
+    }
 
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
+    async saveSettings() {
+        await this.saveData(this.settings)
+    }
 
-	async processor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) {
-		ctx.addChild(new ExtFileCardEl(source, el, this.settings.extPaths.split('\n').filter(val => val).map(val => val.replace(/\\/g, '/'))))
-	}
+    get extPaths() {
+        return this.settings.extPaths
+            .split('\n')
+            .filter((val) => val)
+            .map((val) => val.replace(/\\/g, '/'))
+    }
+
+    async codeBlockProcessor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) {
+        ctx.addChild(new ExtFileCardEl(source, el, this.extPaths))
+    }
+
+    async uriProcessor(params: ObsidianProtocolData) {
+        const source = decodeURIComponent(params.hash ?? '')
+        if (Platform.isDesktop) {
+            const result = ExtFileCard.findFile(source, this.extPaths)
+            if (result !== undefined) {
+                ExtFileCard.openFile(result.filePath)
+            } else {
+                new Notice(`File not found: ${source}`)
+            }
+        }
+    }
+
+    static findFile(source: string, extPaths: string[]) {
+        const fs = require('fs')
+        const path = require('path')
+        const glob = require('glob')
+        const untildify = require('untildify').default
+        for (let index = 0; index < extPaths.length; index++) {
+            const extPath = untildify(extPaths[index]) + (extPaths[index].endsWith('/') ? '' : '/')
+            const filePath = glob.sync(extPath + '**/' + source)[0] ?? ''
+            if (filePath === '') {
+                continue
+            }
+            const stats = fs.statSync(filePath)
+            return {
+                filePath,
+                folderPath: path.dirname(filePath).replace(untildify(extPaths[index]), extPaths[index]),
+                cTime: stats.ctime.toLocaleString(),
+                mTime: stats.mtime.toLocaleString(),
+            }
+        }
+        return
+    }
+
+    static openFile(filePath: string) {
+        const { shell } = require('electron')
+        shell.openPath(filePath)
+    }
+
+    static openPath(folderPath: string) {
+        const { shell } = require('electron')
+        const untildify = require('untildify').default
+        shell.openPath(untildify(folderPath))
+    }
 }
 
 class ExtFileCardEl extends MarkdownRenderChild {
-	private provideName: string;
-	private fileName: string;
-	private cTime: string;
-	private mTime: string;
-	private filePath: string;
-	private folderPath: string;
+    private provideName: string
+    private displayName: string
 
-	constructor(source: string, private readonly el: HTMLElement, private readonly extPaths: string[]) {
-		super(el);
-		this.provideName = source.split('|')[0] ?? ''
-		this.fileName = source.split('|')[1] ?? source.replace(/\\/g, '/').split('/').last() as string
-	}
+    constructor(source: string, private readonly el: HTMLElement, private readonly extPaths: string[]) {
+        super(el)
+        this.provideName = source.split('|')[0] ?? ''
+        this.displayName = source.split('|')[1] ?? (source.replace(/\\/g, '/').split('/').last() as string)
+    }
 
-	onload() {
-		const card = document.createElement('card');
-		if (Platform.isDesktop) {
-			this.findFile(this.provideName, this.extPaths);
-			if (this.filePath === '') {
-				card.innerHTML = `
-					<file-name><a>${this.fileName}</a></file-name>
-					<file-warn>File not found</file-warn>
-				`;
-			} else {
-				card.innerHTML = `
-					<file-name><a>${this.fileName}</a></file-name>
-					<file-time>Modify: ${this.mTime}</file-time>
-					<file-time>Create: ${this.cTime}</file-time>
-					<file-path><a>${this.folderPath}</a></file-path>
-				`;
-				const fileNameLink = card.querySelector('file-name a') as HTMLElement;
-				fileNameLink.onclick = this.openFile.bind(this);
-				const filePathLink = card.querySelector('file-path a') as HTMLElement;
-				filePathLink.onclick = this.openPath.bind(this);
-			}
-		} else {
-			card.innerHTML = `
-				<file-name><a>${this.fileName}</a></file-name>
-				<file-warn>External file unavailable on mobile</file-warn>
-			`;
-		}
-		this.el.appendChild(card);
-	}
+    onload() {
+        const card = document.createElement('ext-file-card')
+        const nameEl = card.createDiv({ cls: 'file-name' }).createEl('a', { text: this.displayName })
 
-	openFile() {
-		const { shell } = require('electron')
-		shell.openPath(this.filePath);
-	}
+        if (Platform.isDesktop) {
+            const result = ExtFileCard.findFile(this.provideName, this.extPaths)
+            if (result === undefined) {
+                card.createDiv({ cls: 'file-warn', text: 'File not found'})
+            } else {
+                card.createDiv({ cls: 'file-time', text: `Modify: ${result.mTime}`})
+                card.createDiv({ cls: 'file-time', text: `Create: ${result.cTime}`})
+                const pathEl = card.createDiv({ cls: 'file-path' }).createEl('a', { text: result.folderPath })
 
-	openPath() {
-		const { shell } = require('electron')
-		console.log(this.folderPath)
-		const untildify = require('untildify').default;
-		shell.openPath(untildify(this.folderPath));
-	}
-
-	findFile(source: string, extPaths: string[]) {
-		const fs = require('fs');
-		const path = require('path');
-		const glob = require('glob');
-		const untildify = require('untildify').default;
-		for (let index = 0; index < extPaths.length; index++) {
-			const extPath = untildify(extPaths[index]) + (extPaths[index].endsWith('/') ? '' : '/');
-			this.filePath = glob.sync(extPath + '**/' + source)[0] ?? '';
-			if (this.filePath === '') {
-				continue;
-			}
-			const stats = fs.statSync(this.filePath);
-			this.cTime = stats.ctime.toLocaleString();
-			this.mTime = stats.mtime.toLocaleString();
-			this.folderPath = path.dirname(this.filePath).replace(untildify(extPaths[index]), extPaths[index]);
-			return;
-		}
-		this.filePath = '';
-	}
+                nameEl.onclick = () => ExtFileCard.openFile(result.filePath)
+                pathEl.onclick = () => ExtFileCard.openPath(result.folderPath)
+            }
+        } else {
+            card.createDiv({ cls: 'file-warn', text: 'External file unavailable on mobile'})
+        }
+        this.el.appendChild(card)
+    }
 }
 
 class ExtFileCardSettingTab extends PluginSettingTab {
-	plugin: ExtFileCard;
+    plugin: ExtFileCard
 
-	constructor(app: App, plugin: ExtFileCard) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+    constructor(app: App, plugin: ExtFileCard) {
+        super(app, plugin)
+        this.plugin = plugin
+    }
 
-	display(): void {
-		const {containerEl} = this;
+    display(): void {
+        const { containerEl } = this
 
-		containerEl.empty();
+        containerEl.empty()
 
-		new Setting(containerEl)
-			.setName('External File Card')
-			.setHeading();
+        new Setting(containerEl).setName('External File Card').setHeading()
 
-		new Setting(containerEl)
-			.setName('External paths')
-			.setDesc('External paths to search for files. Accepts one or multiple paths, one in each line. Paths in the top has higher priority. `~` is allowed.')
-			.addTextArea(text => {
-				text.setValue(this.plugin.settings.extPaths)
-					.onChange(async value => {
-						this.plugin.settings.extPaths = value;
-						await this.plugin.saveSettings();
-					});
-				text.inputEl.cols = 40;
-				text.inputEl.rows = 5;
-				text.inputEl.style.resize = 'none';
-			});
-	}
+        new Setting(containerEl)
+            .setName('External paths')
+            .setDesc(
+                'External paths to search for files. Accepts one or multiple paths, one in each line. Paths in the top has higher priority. `~` is allowed.'
+            )
+            .addTextArea((text) => {
+                text.setValue(this.plugin.settings.extPaths).onChange(async (value) => {
+                    this.plugin.settings.extPaths = value
+                    await this.plugin.saveSettings()
+                })
+                text.inputEl.cols = 40
+                text.inputEl.rows = 5
+            })
+    }
 }
