@@ -1,12 +1,12 @@
 {
 	"name": "external-file-card",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "Display file cards for external files.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "npm i && node version-bump.mjs && git add manifest.json versions.json"
+		"version": "npm i && node version-bump.mjs && git add package.json package-lock.json manifest.json versions.json"
 	},
 	"keywords": [],
 	"author": "",
