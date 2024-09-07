@@ -95,9 +95,9 @@ export default class ExtFileCard extends Plugin {
     }
 
     static findFile(source: string, extPaths: string[]) {
-        const fs = require('fs')
-        const path = require('path')
-        const glob = require('glob')
+        const fs = require('fs') as typeof import('fs')
+        const path = require('path') as typeof import('path')
+        const glob = require('glob') as typeof import('glob')
         const untildify = require('untildify').default
         for (let index = 0; index < extPaths.length; index++) {
             const extPath = untildify(extPaths[index]) + (extPaths[index].endsWith('/') ? '' : '/')
@@ -109,8 +109,7 @@ export default class ExtFileCard extends Plugin {
             return {
                 filePath,
                 folderPath: path.dirname(filePath).replace(untildify(extPaths[index]), extPaths[index]),
-                cTime: stats.ctime.toLocaleString(),
-                mTime: stats.mtime.toLocaleString(),
+                stats
             }
         }
         return
@@ -135,7 +134,7 @@ class ExtFileCardEl extends MarkdownRenderChild {
     constructor(source: string, private readonly el: HTMLElement, private readonly extPaths: string[]) {
         super(el)
         this.provideName = source.split('|')[0] ?? ''
-        this.displayName = source.split('|')[1] ?? (source.replace(/\\/g, '/').split('/').last() as string)
+        this.displayName = source.split('|')[1] ?? (source.replace(/\\/g, '/').split('/').filter(seg => seg).last() as string)
     }
 
     onload() {
@@ -147,8 +146,8 @@ class ExtFileCardEl extends MarkdownRenderChild {
             if (result === undefined) {
                 card.createDiv({ cls: 'file-warn', text: 'File not found' })
             } else {
-                card.createDiv({ cls: 'file-time', text: `Modify: ${result.mTime}` })
-                card.createDiv({ cls: 'file-time', text: `Create: ${result.cTime}` })
+                card.createDiv({ cls: 'file-time', text: `Modify: ${result.stats.mtime.toLocaleString()}` })
+                card.createDiv({ cls: 'file-time', text: `Create: ${result.stats.ctime.toLocaleString()}` })
                 const pathEl = card.createDiv({ cls: 'file-path' }).createEl('a', { text: result.folderPath })
 
                 nameEl.onclick = () => ExtFileCard.openFile(result.filePath)

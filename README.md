@@ -42,6 +42,10 @@ Similar to code block cards, the link won't do anything on mobile platforms.
 
 You can first copy-paste / type the file name in the Obsidian editor and select it. Then use `Insert external file card` command to surround it with `ef` code block, or `Insert external file link` command to transform it into `[file.pdf](obsidian://ef#file.pdf)`. The latter command also automatically encodes the file name to make it a valid URI.
 
+## What about folders?
+
+Just end the folder name with a backslash `/`, e.g., `my-folder/` in `ef` code block or `[This is the folder](obsidian://ef#folder/)`
+
 ## Where are the files?
 
 In the setting panel, this plugin defines an `External paths` config item, which is an editable text area. You can list one or multiple root paths for the plugin to search for files.
