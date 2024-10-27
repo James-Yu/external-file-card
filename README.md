@@ -32,19 +32,19 @@ If the note is opened on mobile platforms, this plugin will not try to locate th
 
 ### Inline file link
 
-If instead of a card, an inline link is required, this plugin also handles Obsidian URIs in the format of `obsidian://ef#file.pdf` and `obsidian://extfile#file.pdf`. Note that the hash `#` cannot be omitted, and the file name or partial path should follow the hash. Additionally, spaces in file names should be encoded with `%20`, e.g., `obsidian://ef#a%20file.pdf` for `a file.pdf`.
+If instead of a card, an inline link is required, this plugin also handles Obsidian URIs in the format of `obsidian://ef?file.pdf` and `obsidian://extfile?file.pdf`. Note that the question mark `?` cannot be omitted, and the file name or partial path should follow the `?`. Additionally, spaces in file names should be encoded with colon `:`, e.g., `obsidian://ef?this:is:a:file.pdf` for `this is a file.pdf`.
 
-These two URIs work similar to other URLs, i.e., you can use syntax like `[This is the file](obsidian://ef#file.pdf)` to create a link to the external file. Clicking on the link will open the file with the default application.
+These two URIs work similar to other URLs, i.e., you can use syntax like `[This is the file](obsidian://ef?file.pdf)` to create a link to the external file. Clicking on the link will open the file with the default application.
 
 Similar to code block cards, the link won't do anything on mobile platforms.
 
 ### Insert code block card or inline file link by command
 
-You can first copy-paste / type the file name in the Obsidian editor and select it. Then use `Insert external file card` command to surround it with `ef` code block, or `Insert external file link` command to transform it into `[file.pdf](obsidian://ef#file.pdf)`. The latter command also automatically encodes the file name to make it a valid URI.
+You can first copy-paste / type the file name in the Obsidian editor and select it. Then use `Insert external file card` command to surround it with `ef` code block, or `Insert external file link` command to transform it into `[file.pdf](obsidian://ef?file.pdf)`. The latter command also automatically encodes spaces in the file name to make it valid.
 
 ## What about folders?
 
-Just end the folder name with a backslash `/`, e.g., `my-folder/` in `ef` code block or `[This is the folder](obsidian://ef#folder/)`
+Just end the folder name with a backslash `/`, e.g., `my-folder/` in `ef` code block or `[This is the folder](obsidian://ef?folder/)`
 
 ## Where are the files?
 

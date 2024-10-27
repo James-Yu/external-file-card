@@ -55,7 +55,8 @@ export default class ExtFileCard extends Plugin {
                 }
                 editor.replaceSelection(
                     `[${editor.getSelection()}]` +
-                        `(obsidian://${this.settings.langId}#${encodeURIComponent(editor.getSelection())})`
+                        `(obsidian://${this.settings.langId}` +
+                        `?${editor.getSelection().replace(/\s/g, ':')})`
                 )
             },
         })
@@ -83,7 +84,10 @@ export default class ExtFileCard extends Plugin {
     }
 
     async uriProcessor(params: ObsidianProtocolData) {
-        const source = decodeURIComponent(params.hash ?? '')
+        const source =
+            Object.entries(params)
+                .find(([key, value]) => key !== '' && value === 'true')?.[0]
+                .replace(/:/g, ' ') ?? decodeURIComponent(params.hash ?? '')
         if (Platform.isDesktop) {
             const result = ExtFileCard.findFile(source, this.extPaths)
             if (result !== undefined) {
@@ -109,7 +113,7 @@ export default class ExtFileCard extends Plugin {
             return {
                 filePath,
                 folderPath: path.dirname(filePath).replace(untildify(extPaths[index]), extPaths[index]),
-                stats
+                stats,
             }
         }
         return
@@ -134,7 +138,13 @@ class ExtFileCardEl extends MarkdownRenderChild {
     constructor(source: string, private readonly el: HTMLElement, private readonly extPaths: string[]) {
         super(el)
         this.provideName = source.split('|')[0] ?? ''
-        this.displayName = source.split('|')[1] ?? (source.replace(/\\/g, '/').split('/').filter(seg => seg).last() as string)
+        this.displayName =
+            source.split('|')[1] ??
+            (source
+                .replace(/\\/g, '/')
+                .split('/')
+                .filter((seg) => seg)
+                .last() as string)
     }
 
     onload() {

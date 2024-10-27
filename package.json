@@ -22,7 +22,6 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
-		"file-icons-js": "github:websemantics/file-icons-js",
 		"glob": "^11.0.0",
 		"untildify": "^5.0.0"
 	}
