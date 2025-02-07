@@ -18,6 +18,17 @@ will be rendered as
 <br /><img src="./images/card.png" width="300px" /><br />
 if there is a file `~/OneDrive/Documents/file.pdf`.
 
+Multiple files can be displayed in a same file card, if their paths are listed in multiple lines. The following code block
+~~~
+```ef
+file.pdf
+another_file.pdf
+```
+~~~
+will be rendered as
+<br /><img src="./images/multiple.png" width="300px" /><br />
+if there is a file `~/OneDrive/Documents/file.pdf`.
+
 If the file cannot be found, the following code block
 ~~~
 ```ef

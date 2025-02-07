@@ -131,15 +131,17 @@ export default class ExtFileCard extends Plugin {
     }
 }
 
-class ExtFileCardEl extends MarkdownRenderChild {
+class ExtFileCardComponent {
     private provideName: string
     private displayName: string
 
-    constructor(source: string, private readonly el: HTMLElement, private readonly extPaths: string[]) {
-        super(el)
-        this.provideName = source.split('|')[0] ?? ''
+    // source should be a single line of ExtFileCard string
+    // example: This_is_a_file_name.ext|This is a display name
+    constructor(source: string, private readonly extPaths: string[]) {
+        const segments = source.split('|')
+        this.provideName = segments[0] ?? ''
         this.displayName =
-            source.split('|')[1] ??
+            segments[1] ??
             (source
                 .replace(/\\/g, '/')
                 .split('/')
@@ -147,25 +149,49 @@ class ExtFileCardEl extends MarkdownRenderChild {
                 .last() as string)
     }
 
-    onload() {
-        const card = document.createElement('ext-file-card')
-        const nameEl = card.createDiv({ cls: 'file-name' }).createEl('a', { text: this.displayName })
+    toHTML(): HTMLElement {
+        const container = document.createElement('ext-file-component')
+        const nameEl = container.createDiv({ cls: 'file-name' }).createEl('a', { text: this.displayName })
 
         if (Platform.isDesktop) {
             const result = ExtFileCard.findFile(this.provideName, this.extPaths)
             if (result === undefined) {
-                card.createDiv({ cls: 'file-warn', text: 'File not found' })
+                container.createDiv({ cls: 'file-warn', text: 'File not found' })
             } else {
-                card.createDiv({ cls: 'file-time', text: `Modify: ${result.stats.mtime.toLocaleString()}` })
-                card.createDiv({ cls: 'file-time', text: `Create: ${result.stats.ctime.toLocaleString()}` })
-                const pathEl = card.createDiv({ cls: 'file-path' }).createEl('a', { text: result.folderPath })
+                container.createDiv({ cls: 'file-time', text: `Modify: ${result.stats.mtime.toLocaleString()}` })
+                container.createDiv({ cls: 'file-time', text: `Create: ${result.stats.ctime.toLocaleString()}` })
+                const pathEl = container.createDiv({ cls: 'file-path' }).createEl('a', { text: result.folderPath })
 
                 nameEl.onclick = () => ExtFileCard.openFile(result.filePath)
                 pathEl.onclick = () => ExtFileCard.openPath(result.folderPath)
             }
         } else {
-            card.createDiv({ cls: 'file-warn', text: 'External file unavailable on mobile' })
+            container.createDiv({ cls: 'file-warn', text: 'External file unavailable on mobile' })
         }
+
+        return container
+    }
+}
+
+class ExtFileCardEl extends MarkdownRenderChild {
+    private extFileCardComponents: ExtFileCardComponent[]
+
+    constructor(source: string, private readonly el: HTMLElement, private readonly extPaths: string[]) {
+        super(el)
+        this.extFileCardComponents = source
+            .split('\n')
+            .filter((line) => line)
+            .map((line) => new ExtFileCardComponent(line, extPaths))
+    }
+
+    onload() {
+        const card = document.createElement('ext-file-card')
+        this.extFileCardComponents.forEach((component, index, _) => {
+            card.appendChild(component.toHTML())
+            if (index !== this.extFileCardComponents.length - 1) {
+                card.appendChild(document.createElement('hr'))
+            }
+        })
         this.el.appendChild(card)
     }
 }

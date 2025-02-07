@@ -2,23 +2,27 @@ ext-file-card {
     display: block;
     border: solid 0.025em;
     border-radius: 0.25em;
-    padding: 0.5em 1em;
     margin: 0.5em 0;
     max-width: 24em;
     overflow: hidden;
 }
 
-ext-file-card * {
-    display: block;
+ext-file-card hr {
+    border-top: solid 0.025em !important;
 }
 
-ext-file-card .file-name a {
+ext-file-component {
+    display: block;
+    padding: 0.5em 1em;
+}
+
+ext-file-component .file-name a {
     font-weight: bold;
     text-decoration-line: none;
 }
 
-ext-file-card .file-time,
-ext-file-card .file-path {
+ext-file-component .file-time,
+ext-file-component .file-path {
     font-family: monospace;
     font-size: 0.8em;
     overflow: hidden;
@@ -27,6 +31,6 @@ ext-file-card .file-path {
     text-decoration-line: none;
 }
 
-ext-file-card .file-warn {
+ext-file-component .file-warn {
     font-size: 0.8em;
 }
