@@ -1,6 +1,6 @@
 {
 	"name": "external-file-card",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Display file cards for external files.",
 	"main": "main.js",
 	"scripts": {
