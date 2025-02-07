@@ -30,8 +30,10 @@ export default class ExtFileCard extends Plugin {
         await this.loadSettings()
 
         // Handlers
-        this.registerMarkdownCodeBlockProcessor('ef', this.codeBlockProcessor.bind(this))
-        this.registerMarkdownCodeBlockProcessor('extfile', this.codeBlockProcessor.bind(this))
+        this.registerMarkdownCodeBlockProcessor('ef', this.efBlockProcessor.bind(this))
+        this.registerMarkdownCodeBlockProcessor('extfile', this.efBlockProcessor.bind(this))
+        this.registerMarkdownCodeBlockProcessor('efc', this.efcBlockProcessor.bind(this))
+        this.registerMarkdownCodeBlockProcessor('extfilec', this.efcBlockProcessor.bind(this))
         this.registerObsidianProtocolHandler('ef', this.uriProcessor.bind(this))
         this.registerObsidianProtocolHandler('extfile', this.uriProcessor.bind(this))
 
@@ -79,8 +81,12 @@ export default class ExtFileCard extends Plugin {
             .map((val) => val.replace(/\\/g, '/'))
     }
 
-    async codeBlockProcessor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) {
+    async efBlockProcessor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) {
         ctx.addChild(new ExtFileCardEl(source, el, this.extPaths))
+    }
+
+    async efcBlockProcessor(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) {
+        ctx.addChild(new ExtFileCardEl(source, el, this.extPaths, { compact: true }))
     }
 
     async uriProcessor(params: ObsidianProtocolData) {
@@ -149,25 +155,48 @@ class ExtFileCardComponent {
                 .last() as string)
     }
 
-    toHTML(): HTMLElement {
+    toHTML(config: { compact?: boolean } = {}): HTMLElement {
         const container = document.createElement('ext-file-component')
+        if (config.compact) {
+            container.classList.add('compact')
+        }
         const nameEl = container.createDiv({ cls: 'file-name' }).createEl('a', { text: this.displayName })
 
-        if (Platform.isDesktop) {
-            const result = ExtFileCard.findFile(this.provideName, this.extPaths)
-            if (result === undefined) {
-                container.createDiv({ cls: 'file-warn', text: 'File not found' })
-            } else {
-                container.createDiv({ cls: 'file-time', text: `Modify: ${result.stats.mtime.toLocaleString()}` })
-                container.createDiv({ cls: 'file-time', text: `Create: ${result.stats.ctime.toLocaleString()}` })
-                const pathEl = container.createDiv({ cls: 'file-path' }).createEl('a', { text: result.folderPath })
-
-                nameEl.onclick = () => ExtFileCard.openFile(result.filePath)
-                pathEl.onclick = () => ExtFileCard.openPath(result.folderPath)
-            }
-        } else {
-            container.createDiv({ cls: 'file-warn', text: 'External file unavailable on mobile' })
+        // Mobile warning
+        if (!Platform.isDesktop) {
+            container.createDiv({
+                cls: 'file-warn',
+                text: config.compact ? 'Unavailable on mobile' : 'External file unavailable on mobile',
+            })
+            return container
         }
+
+        const moment = require('moment') as typeof import('moment')
+        const result = ExtFileCard.findFile(this.provideName, this.extPaths)
+
+        // File not found
+        if (result === undefined) {
+            container.createDiv({
+                cls: 'file-warn',
+                text: config.compact ? 'Not found' : 'File not found',
+            })
+            return container
+        }
+
+        const modifyText = config.compact
+            ? `M${moment(result.stats.mtime).format('YYYY-MM-DD')}`
+            : `Modify: ${moment(result.stats.mtime).format('YYYY-MM-DD HH:mm')}`
+        const createText = config.compact
+            ? `C${moment(result.stats.ctime).format('YYYY-MM-DD')}`
+            : `Create: ${moment(result.stats.ctime).format('YYYY-MM-DD HH:mm')}`
+        const pathText = config.compact ? '📁' : result.folderPath
+
+        container.createDiv({ cls: 'file-time', text: modifyText })
+        container.createDiv({ cls: 'file-time', text: createText })
+        const pathEl = container.createDiv({ cls: 'file-path' }).createEl('a', { text: pathText })
+
+        nameEl.onclick = () => ExtFileCard.openFile(result.filePath)
+        pathEl.onclick = () => ExtFileCard.openPath(result.folderPath)
 
         return container
     }
@@ -176,7 +205,12 @@ class ExtFileCardComponent {
 class ExtFileCardEl extends MarkdownRenderChild {
     private extFileCardComponents: ExtFileCardComponent[]
 
-    constructor(source: string, private readonly el: HTMLElement, private readonly extPaths: string[]) {
+    constructor(
+        source: string,
+        private readonly el: HTMLElement,
+        private readonly extPaths: string[],
+        private readonly config: { compact?: boolean } = {}
+    ) {
         super(el)
         this.extFileCardComponents = source
             .split('\n')
@@ -187,7 +221,7 @@ class ExtFileCardEl extends MarkdownRenderChild {
     onload() {
         const card = document.createElement('ext-file-card')
         this.extFileCardComponents.forEach((component, index, _) => {
-            card.appendChild(component.toHTML())
+            card.appendChild(component.toHTML(this.config))
             if (index !== this.extFileCardComponents.length - 1) {
                 card.appendChild(document.createElement('hr'))
             }

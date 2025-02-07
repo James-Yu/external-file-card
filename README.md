@@ -27,7 +27,15 @@ another_file.pdf
 ~~~
 will be rendered as
 <br /><img src="./images/multiple.png" width="300px" /><br />
-if there is a file `~/OneDrive/Documents/file.pdf`.
+
+A more compact view of the file card is available via languages `efc` and `extfilec` with the final `c` letter. The following code block
+~~~
+```efc
+file.pdf
+```
+~~~
+will be rendered as
+<br /><img src="./images/compact.png" width="300px" /><br />
 
 If the file cannot be found, the following code block
 ~~~

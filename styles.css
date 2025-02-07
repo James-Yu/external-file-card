@@ -16,6 +16,18 @@ ext-file-component {
     padding: 0.5em 1em;
 }
 
+ext-file-component.compact {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+ext-file-component.compact * {
+    display: inline;
+    text-decoration-line: none;
+    padding-right: 0.25em;
+}
+
 ext-file-component .file-name a {
     font-weight: bold;
     text-decoration-line: none;

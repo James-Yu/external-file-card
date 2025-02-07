@@ -23,6 +23,7 @@
 	},
 	"dependencies": {
 		"glob": "^11.0.0",
+		"moment": "^2.30.1",
 		"untildify": "^5.0.0"
 	}
 }
