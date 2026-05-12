@@ -163,7 +163,7 @@ class ExtFileCardComponent {
         if (config.compact) {
             container.classList.add('compact')
         }
-        const nameEl = container.createDiv({ cls: 'file-name' }).createEl('a', { text: this.displayName })
+        const nameEl = container.createDiv({ cls: 'card-name' }).createEl('a', { text: this.displayName })
 
         // Mobile warning
         if (!Platform.isDesktop) {
@@ -186,9 +186,14 @@ class ExtFileCardComponent {
         }
 
         if (result.stats.isFile()) {
-            ExtFileCardComponent.renderFileDetails(container, nameEl, result, config)
+            ExtFileCardComponent.renderFileDetails(container.createDiv({ cls: 'file-info' }), nameEl, result, config)
         } else if (result.stats.isDirectory()) {
-            ExtFileCardComponent.renderFolderDetails(container, nameEl, result)
+            ExtFileCardComponent.renderFolderDetails(
+                container.createDiv({ cls: 'folder-info' }),
+                nameEl,
+                result,
+                config,
+            )
         }
 
         return container
@@ -202,10 +207,10 @@ class ExtFileCardComponent {
     ) {
         const moment = require('moment') as typeof import('moment')
         const modifyText = config.compact
-            ? `M${moment(result.stats.mtime).format('YYYY-MM-DD')}`
+            ? `M${moment(result.stats.mtime).format('YYMMDD')}`
             : `Modify: ${moment(result.stats.mtime).format('YYYY-MM-DD HH:mm')}`
         const createText = config.compact
-            ? `C${moment(result.stats.ctime).format('YYYY-MM-DD')}`
+            ? `C${moment(result.stats.ctime).format('YYMMDD')}`
             : `Create: ${moment(result.stats.ctime).format('YYYY-MM-DD HH:mm')}`
         const pathText = config.compact ? '📁' : result.folderPath
 
@@ -221,6 +226,7 @@ class ExtFileCardComponent {
         container: HTMLElement,
         nameEl: HTMLAnchorElement,
         result: { filePath: string; folderPath: string; stats: import('fs').Stats },
+        config: { compact?: boolean },
     ) {
         const fs = require('fs') as typeof import('fs')
         const path = require('path') as typeof import('path')
@@ -231,11 +237,23 @@ class ExtFileCardComponent {
             return !['.DS_Store', 'Thumbs.db'].includes(child)
         })
         const { fileCount, folderCount } = ExtFileCardComponent.countFolderChildren(children, result.filePath)
-        container.createDiv({ cls: 'file-time', text: `Files: ${fileCount}, Folders: ${folderCount}` })
+        container.createDiv({
+            cls: 'folder-children',
+            text: config.compact
+                ? (fileCount > 0 ? `F${fileCount}` : '') + (folderCount > 0 ? ` D${folderCount}` : '')
+                : `Files: ${fileCount}, Folders: ${folderCount}`,
+        })
 
-        const listContainer = container.createEl('ul', { cls: 'file-list' })
+        if (config.compact) {
+            return
+        }
+
+        const listContainer = container.createEl('ul', { cls: 'child-list' })
         children.forEach((child: string) => {
-            const childEl = listContainer.createEl('li', { cls: 'file-name' }).createEl('a', { text: child })
+            const childEl = listContainer
+                .createEl('li', { cls: 'child-name' })
+                .createDiv({ cls: 'file-name' })
+                .createEl('a', { text: child })
             childEl.onclick = () => ExtFileCard.openPath(path.join(result.filePath, child))
         })
         nameEl.onclick = () => ExtFileCard.openPath(result.filePath)

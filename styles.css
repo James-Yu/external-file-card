@@ -28,18 +28,8 @@ ext-file-component.compact * {
     padding-right: 0.25em;
 }
 
-ext-file-component div.file-name a {
+ext-file-component .card-name a {
     font-weight: bold;
-    text-decoration-line: none;
-}
-
-ext-file-component .file-time,
-ext-file-component .file-path {
-    font-family: monospace;
-    font-size: 0.8em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-wrap: nowrap;
     text-decoration-line: none;
 }
 
@@ -47,18 +37,32 @@ ext-file-component .file-warn {
     font-size: 0.8em;
 }
 
-ext-file-component ul {
+.file-info .file-time,
+.file-info .file-path,
+.folder-info .folder-children {
+    font-family: monospace;
+    font-size: 0.8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-wrap: nowrap;
+    text-decoration-line: none;
+}
+
+.folder-info ul.child-list {
     margin: 0 !important;
 }
 
-ext-file-component li.file-name {
+.folder-info li.child-name {
     font-family: monospace;
     font-size: 0.8em;
 }
 
-ext-file-component li.file-name a {
+.folder-info li.child-name div {
     overflow: hidden;
     text-overflow: ellipsis;
     text-wrap: nowrap;
+}
+
+.folder-info li.child-name div a {
     text-decoration-line: none;
 }
