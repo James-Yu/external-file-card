@@ -28,7 +28,7 @@ ext-file-component.compact * {
     padding-right: 0.25em;
 }
 
-ext-file-component .file-name a {
+ext-file-component div.file-name a {
     font-weight: bold;
     text-decoration-line: none;
 }
@@ -45,4 +45,20 @@ ext-file-component .file-path {
 
 ext-file-component .file-warn {
     font-size: 0.8em;
+}
+
+ext-file-component ul {
+    margin: 0 !important;
+}
+
+ext-file-component li.file-name {
+    font-family: monospace;
+    font-size: 0.8em;
+}
+
+ext-file-component li.file-name a {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-wrap: nowrap;
+    text-decoration-line: none;
 }

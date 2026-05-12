@@ -22,7 +22,7 @@ const DEFAULT_SETTINGS: ExtFileCardSettings = {
 }
 
 export default class ExtFileCard extends Plugin {
-    settings: ExtFileCardSettings
+    settings: ExtFileCardSettings = DEFAULT_SETTINGS
 
     async onload() {
         // Settings
@@ -58,7 +58,7 @@ export default class ExtFileCard extends Plugin {
                 editor.replaceSelection(
                     `[${editor.getSelection()}]` +
                         `(obsidian://${this.settings.langId}` +
-                        `?${editor.getSelection().replace(/\s/g, ':')})`
+                        `?${editor.getSelection().replace(/\s/g, ':')})`,
                 )
             },
         })
@@ -115,7 +115,7 @@ export default class ExtFileCard extends Plugin {
             if (filePath === '') {
                 continue
             }
-            const stats = fs.statSync(filePath)
+            const stats: import('fs').Stats = fs.statSync(filePath)
             return {
                 filePath,
                 folderPath: path.dirname(filePath).replace(untildify(extPaths[index]), extPaths[index]),
@@ -143,7 +143,10 @@ class ExtFileCardComponent {
 
     // source should be a single line of ExtFileCard string
     // example: This_is_a_file_name.ext|This is a display name
-    constructor(source: string, private readonly extPaths: string[]) {
+    constructor(
+        source: string,
+        private readonly extPaths: string[],
+    ) {
         const segments = source.split('|')
         this.provideName = segments[0] ?? ''
         this.displayName =
@@ -171,7 +174,6 @@ class ExtFileCardComponent {
             return container
         }
 
-        const moment = require('moment') as typeof import('moment')
         const result = ExtFileCard.findFile(this.provideName, this.extPaths)
 
         // File not found
@@ -183,6 +185,22 @@ class ExtFileCardComponent {
             return container
         }
 
+        if (result.stats.isFile()) {
+            ExtFileCardComponent.renderFileDetails(container, nameEl, result, config)
+        } else if (result.stats.isDirectory()) {
+            ExtFileCardComponent.renderFolderDetails(container, nameEl, result)
+        }
+
+        return container
+    }
+
+    private static renderFileDetails(
+        container: HTMLElement,
+        nameEl: HTMLAnchorElement,
+        result: { filePath: string; folderPath: string; stats: import('fs').Stats },
+        config: { compact?: boolean },
+    ) {
+        const moment = require('moment') as typeof import('moment')
         const modifyText = config.compact
             ? `M${moment(result.stats.mtime).format('YYYY-MM-DD')}`
             : `Modify: ${moment(result.stats.mtime).format('YYYY-MM-DD HH:mm')}`
@@ -197,8 +215,62 @@ class ExtFileCardComponent {
 
         nameEl.onclick = () => ExtFileCard.openFile(result.filePath)
         pathEl.onclick = () => ExtFileCard.openPath(result.folderPath)
+    }
 
-        return container
+    private static renderFolderDetails(
+        container: HTMLElement,
+        nameEl: HTMLAnchorElement,
+        result: { filePath: string; folderPath: string; stats: import('fs').Stats },
+    ) {
+        const fs = require('fs') as typeof import('fs')
+        const path = require('path') as typeof import('path')
+        const children = ExtFileCardComponent.sortFolderChildren(
+            fs.readdirSync(result.filePath),
+            result.filePath,
+        ).filter((child) => {
+            return !['.DS_Store', 'Thumbs.db'].includes(child)
+        })
+        const { fileCount, folderCount } = ExtFileCardComponent.countFolderChildren(children, result.filePath)
+        container.createDiv({ cls: 'file-time', text: `Files: ${fileCount}, Folders: ${folderCount}` })
+
+        const listContainer = container.createEl('ul', { cls: 'file-list' })
+        children.forEach((child: string) => {
+            const childEl = listContainer.createEl('li', { cls: 'file-name' }).createEl('a', { text: child })
+            childEl.onclick = () => ExtFileCard.openPath(path.join(result.filePath, child))
+        })
+        nameEl.onclick = () => ExtFileCard.openPath(result.filePath)
+    }
+
+    private static countFolderChildren(children: string[], folderPath: string) {
+        const fs = require('fs') as typeof import('fs')
+        const path = require('path') as typeof import('path')
+        let fileCount = 0
+        let folderCount = 0
+        children.forEach((child) => {
+            const stats = fs.statSync(path.join(folderPath, child))
+            if (stats.isFile()) {
+                fileCount++
+            } else if (stats.isDirectory()) {
+                folderCount++
+            }
+        })
+        return { fileCount, folderCount }
+    }
+
+    private static sortFolderChildren(children: string[], folderPath: string) {
+        const fs = require('fs') as typeof import('fs')
+        const path = require('path') as typeof import('path')
+        return children.sort((a, b) => {
+            const aIsDir = fs.statSync(path.join(folderPath, a)).isDirectory()
+            const bIsDir = fs.statSync(path.join(folderPath, b)).isDirectory()
+            if (aIsDir && !bIsDir) {
+                return -1
+            } else if (!aIsDir && bIsDir) {
+                return 1
+            } else {
+                return a.localeCompare(b)
+            }
+        })
     }
 }
 
@@ -209,7 +281,7 @@ class ExtFileCardEl extends MarkdownRenderChild {
         source: string,
         private readonly el: HTMLElement,
         private readonly extPaths: string[],
-        private readonly config: { compact?: boolean } = {}
+        private readonly config: { compact?: boolean } = {},
     ) {
         super(el)
         this.extFileCardComponents = source
@@ -246,7 +318,7 @@ class ExtFileCardSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('External paths')
             .setDesc(
-                'External paths to search for files. Accepts one or multiple paths, one in each line. Paths in the top has higher priority. `~` is allowed.'
+                'External paths to search for files. Accepts one or multiple paths, one in each line. Paths in the top has higher priority. `~` is allowed.',
             )
             .addTextArea((text) => {
                 text.setValue(this.plugin.settings.extPaths).onChange(async (value) => {
@@ -260,7 +332,7 @@ class ExtFileCardSettingTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('Language identifier')
             .setDesc(
-                'Use short language identifier `ef` instead of the full identifier `extfile`. This setting only affects the code block and link generated by commands.'
+                'Use short language identifier `ef` instead of the full identifier `extfile`. This setting only affects the code block and link generated by commands.',
             )
             .addToggle((toggle) => {
                 toggle.setValue(this.plugin.settings.langId === 'ef').onChange(async (value) => {
