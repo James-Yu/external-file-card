@@ -9,6 +9,7 @@ ext-file-card {
 
 ext-file-card hr {
     border-top: solid 0.025em !important;
+    margin: 0 !important;
 }
 
 ext-file-component {
